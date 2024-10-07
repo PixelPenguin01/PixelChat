@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" name="viewport" />
+    <title>PixelChat</title>
+    <!-- 添加 favicon 链接 -->
+    <link rel="icon" type="image/x-icon" href="https://nostalgic-css.github.io/NES.css/favicon.png">
+    <!-- 或者如果您使用 PNG 格式 -->
+    <!-- <link rel="icon" type="image/png" href="/images/favicon.png"> -->
+    <script src="./js/axios.min.js"></script>
+    <link href="https://unpkg.com/nes.css@latest/css/nes.min.css" rel="stylesheet">
+    <style>
+        /* 添加自定义样式 */
+        
+        #chat-container {
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        #message-list {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .message.-left {
+            justify-content: flex-start;
+        }
+        
+        .message.-right {
+            justify-content: flex-end;
+        }
+        
+        .nes-bcrikko {
+            flex-shrink: 0;
+        }
+        
+        .nes-balloon {
+            margin-top: -10px;
+            /* 调整气泡位置，使其更靠近头像 */
+            max-width: 70%;
+            /* 限制气泡宽度 */
+        }
+        
+        .message.-left .nes-balloon {
+            margin-left: 10px;
+        }
+        
+        .message.-right .nes-balloon {
+            margin-right: 10px;
+            order: -1;
+            /* 将气泡放在头像左边 */
+        }
+        /* 保持原有的样式不变，添加以下新样式 */
+        
+        #apikey-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        #apikey-modal .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 300px;
+            text-align: center;
+            /* 居中文本 */
+        }
+        
+        #apikey-modal .nes-field {
+            margin-bottom: 15px;
+            /* 在输入框下方添加间距 */
+        }
+        
+        #apikey-modal label {
+            display: block;
+            /* 使标签单独占一行 */
+            margin-bottom: 5px;
+            /* 在标签和输入框之间添加间距 */
+        }
+        
+        #apikey-modal .nes-btn {
+            margin-top: 10px;
+            /* 在按钮上方添加间距 */
+        }
+        /* 添加新的样式 */
+        
+        .title-container {
+            text-align: center;
+        }
+        /* 添加新的样式 */
+        
+        #textarea_field {
+            resize: none;
+            height: 38px;
+            /* 设置高度为一行的高度 */
+            min-height: 38px;
+            /* 设置最小高度 */
+            overflow-y: hidden;
+            /* 隐藏垂直滚动条 */
+            line-height: 20px;
+            /* 设置行高 */
+            padding: 8px;
+            /* 调整内边距 */
+            margin-bottom: 10px;
+            /* 在输入框下方添加间距 */
+            width: 100%;
+            /* 确保输入框占满容器宽度 */
+            box-sizing: border-box;
+            /* 确保padding不会增加总宽度 */
+        }
+        
+        .button-container {
+            display: flex;
+            justify-content: center;
+            /* 使按钮居中 */
+            margin-top: 10px;
+            /* 在按钮上方添加间距 */
+        }
+        
+        .button-container .nes-btn {
+            width: 200px;
+            /* 设置按钮宽度 */
+        }
+        /* 修改用户头像的样式 */
+        
+        .message.-right .nes-bcrikko {
+            transform: scale(0.8);
+            /* 将用户头像缩小到原来的80% */
+            transform-origin: right center;
+            /* 确保缩放是从右侧开始的 */
+        }
+        /* 调整用户消息气泡的位置，以适应更小的头像 */
+        
+        .message.-right .nes-balloon {
+            margin-right: 5px;
+            /* 减少气泡和头像之间的距离 */
+        }
+        /* 添加新的 @font-face 规则 */
+        
+        @font-face {
+            font-family: 'PixelFontSet';
+            src: url('fonts/ja.woff2') format('woff2'), url('fonts/ko.woff2') format('woff2'), url('fonts/latin.woff2') format('woff2'), url('fonts/zh_hans.woff2') format('woff2'), url('fonts/zh_hant.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+        /* 全局应用自定义字体 */
+        
+        body,
+        button,
+        input,
+        textarea,
+        .nes-container,
+        .nes-btn,
+        .nes-balloon {
+            font-family: 'PixelFontSet', 'Press Start 2P', monospace;
+        }
+        /* 可以为特定元素指定字体回退顺序 */
+        
+        .title-container {
+            font-family: 'PixelFontSet', 'Press Start 2P', monospace;
+        }
+        
+        .message {
+            font-family: 'PixelFontSet', 'Press Start 2P', monospace;
+        }
+        /* 现有的样式保持不变 */
+        /* 添加代码块样式 */
+        
+        .nes-balloon pre {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-left: 3px solid #f36d33;
+            color: #666;
+            page-break-inside: avoid;
+            font-family: monospace;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 1.6em;
+            max-width: 100%;
+            overflow: auto;
+            padding: 1em 1.5em;
+            display: block;
+            word-wrap: break-word;
+        }
+        
+        .nes-balloon code {
+            background-color: #f4f4f4;
+            border-radius: 3px;
+            color: #666;
+            font-family: monospace;
+            padding: 0.2em 0.4em;
+        }
+        /* 添加新的样式 */
+        
+        body {
+            /* 设置背景图片 */
+            background-image: url('images/hero-min.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            /* 添加一个半透明的遮罩，使内容更易读 */
+            background-color: rgba(0, 0, 0, 0.5);
+            /* 设置最小高度以确保背景覆盖整个视口 */
+            min-height: 100vh;
+            /* 居中内容 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        /* 创建一个包装器来限制内容宽度 */
+        
+        .content-wrapper {
+            width: 80%;
+            /* 或者您想要的任何宽度 */
+            max-width: 800px;
+            /* 设置最大宽度 */
+            background-color: rgba(255, 255, 255, 0.9);
+            /* 半透明白色背景 */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        /* 修改输入框的光标样式 */
+        
+        #textarea_field:focus {
+            cursor: url('images/cursor-edit.png'), text;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="content-wrapper">
+        <!-- 现有的所有内容 -->
+        <!-- API Key 输入模态框 -->
+        <div id="apikey-modal" style="display: none;">
+            <div class="modal-content nes-container">
+                <div class="nes-field">
+                    <label for="apikey_field">请输入 API Key</label>
+                    <input type="text" id="apikey_field" class="nes-input">
+                </div>
+                <div class="nes-field">
+                    <label for="apiurl_field">请输入 API URL (可选)</label>
+                    <input type="text" id="apiurl_field" class="nes-input" placeholder="https://api.openai.com/v1">
+                </div>
+                <button type="button" class="nes-btn is-primary" onclick="saveApiSettings()">保存</button>
+            </div>
+        </div>
+
+        <div class="nes-container is-rounded is-dark title-container">
+            <p>PixelChat</p>
+        </div>
+        <section class="nes-container" id="chat-container">
+            <section class="message-list" id="message-list">
+                <!-- 消息将在这里动态添加 -->
+            </section>
+        </section>
+        <div class="nes-container is-rounded is-dark">
+            <p>Please enter the content you would like to search: <br>(Use /help command for more help)</p>
+        </div>
+        <textarea id="textarea_field" class="nes-textarea"></textarea>
+        <div class="button-container">
+            <button type="button" class="nes-btn is-success" onclick="ask()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // 初始化变量
+        window.apikey = "";
+        window.apiurl = "https://api.openai.com/v1"; // 添加默认 API URL
+        window.prompt1 = "";
+        window.mt = 2048;
+        window.tpr = 1;
+        window.tp = 1;
+        window.fp = 0;
+        window.pp = 0;
+        window.mode = "true";
+        window.csize = 1000;
+        const messageList = document.getElementById("message-list");
+        const inputBox = document.getElementById("textarea_field");
+        var histories = "";
+
+        // 检查并设置API密钥和URL
+        function checkApiSettings() {
+            if (getCookie("apikey") === null || getCookie("apikey") === "") {
+                console.log("No API key found, showing modal");
+                document.getElementById('apikey-modal').style.display = 'flex';
+            } else {
+                console.log("API key found: " + getCookie("apikey"));
+                window.apikey = getCookie("apikey");
+            }
+
+            // 检查并设置 API URL
+            if (getCookie("apiurl") !== null && getCookie("apiurl") !== "") {
+                window.apiurl = getCookie("apiurl");
+                console.log("API URL found: " + window.apiurl);
+            }
+        }
+
+        // 保存 API 设置
+        function saveApiSettings() {
+            const apiKeyInput = document.getElementById('apikey_field');
+            const apiUrlInput = document.getElementById('apiurl_field'); // 添加 API URL 输入框
+            if (apiKeyInput.value.trim() !== "") {
+                window.apikey = apiKeyInput.value.trim();
+                setCookie("apikey", window.apikey);
+
+                // 保存 API URL
+                if (apiUrlInput.value.trim() !== "") {
+                    window.apiurl = apiUrlInput.value.trim();
+                    setCookie("apiurl", window.apiurl);
+                }
+
+                document.getElementById('apikey-modal').style.display = 'none';
+                addMessage("AI", "API 设置保存成功！");
+                console.log("API settings saved. Key: " + window.apikey + ", URL: " + window.apiurl);
+            } else {
+                alert("请输入有效的 API Key");
+            }
+        }
+
+        // 页面加载完成后检查 API 设置
+        window.onload = function() {
+            console.log("Window loaded, checking API settings");
+            checkApiSettings();
+            // 添加欢迎消息
+            addMessage("AI", "How can PixelChat help you today?");
+
+            // 添加输入框自动调整高度的功能
+            const textarea = document.getElementById('textarea_field');
+            textarea.addEventListener('input', function() {
+                this.style.height = '38px';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+
+            // 添加输入框的键盘事件监听
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault(); // 阻止默认的换行行为
+                    ask(); // 调用发送消息的函数
+                }
+            });
+        }
+
+        // 替换现有的 ask 函数
+        async function ask() {
+            let inputText = inputBox.value;
+            if (inputText.startsWith("/")) {
+                handleCommand(inputText.substring(1));
+                inputBox.value = "";
+                return;
+            }
+
+            if (window.mode == "false") {
+                histories = "";
+            }
+            histories += "\n" + window.prompt1 + "\nQ:" + inputText + "。";
+            let question = histories.length <= window.csize ? histories : histories.substring(histories.length - window.csize);
+
+            addMessage("Human", inputText);
+            addMessage("AI", ""); // 添加一个空的AI消息,用于流式更新
+
+            try {
+                const response = await fetch(`${window.apiurl}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${window.apikey}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-3.5-turbo",
+                        messages: [{
+                            role: "system",
+                            content: window.prompt1
+                        }, {
+                            role: "user",
+                            content: question
+                        }],
+                        max_tokens: window.mt,
+                        temperature: window.tpr,
+                        top_p: window.tp,
+                        frequency_penalty: window.fp,
+                        presence_penalty: window.pp,
+                        stream: true // 启用流式输出
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let result = "";
+
+                while (true) {
+                    const {
+                        done,
+                        value
+                    } = await reader.read();
+                    if (done) {
+                        break;
+                    }
+
+                    // 解码并处理接收到的数据块
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    const parsedLines = lines
+                        .map(line => line.replace(/^data: /, '').trim()) // 删除"data: "前缀
+                        .filter(line => line !== "" && line !== "[DONE]") // 删除空行和结束标记
+                        .map(line => JSON.parse(line)); // 解析JSON
+
+                    for (const parsedLine of parsedLines) {
+                        const {
+                            choices
+                        } = parsedLine;
+                        if (choices && choices[0]) {
+                            const {
+                                delta
+                            } = choices[0];
+                            if (delta && delta.content) {
+                                result += delta.content;
+                                updateLastAIMessage(result);
+                            }
+                        }
+                    }
+                }
+
+                histories += "\n" + result;
+                inputBox.value = "";
+            } catch (error) {
+                console.error("API 请求错误:", error);
+                updateLastAIMessage("抱歉,发生了一个错误。请稍后再试。");
+            }
+        }
+
+        // 处理命令函数
+        function handleCommand(command) {
+            switch (command) {
+                case "help":
+                    addMessage("AI", createHelpList());
+                    break;
+                case "info":
+                    addMessage("AI", createInfoList());
+                    break;
+                case "save":
+                    setCookie("apikey", window.apikey);
+                    setCookie("prompt1", window.prompt1);
+                    setCookie("mt", window.mt);
+                    setCookie("tpr", window.tpr);
+                    setCookie("tp", window.tp);
+                    setCookie("fp", window.fp);
+                    setCookie("pp", window.pp);
+                    setCookie("mode", window.mode);
+                    setCookie("csize", window.csize);
+                    addMessage("AI", "参数保存成功,数据将保存30天");
+                    break;
+                case "apikey":
+                    window.apikey = prompt("apikey 请输入从官网获取到的apikey,默认为空");
+                    addMessage("AI", "设置成功");
+                    break;
+                case "prompt":
+                    window.prompt1 = prompt("Prompt 请输入要添加的上下文文本,默认为空");
+                    addMessage("AI", "设置成功");
+                    break;
+                case "maxtoken":
+                    window.mt = Number(prompt("Max_tokens 请输入ChatGPT每次能生成的词数,默认为2048"));
+                    addMessage("AI", "设置成功");
+                    break;
+                case "tpr":
+                    window.tpr = Number(prompt("Temperature 请输入一个0到1.0的一位小数,默认为1.0"));
+                    addMessage("AI", "设置成功");
+                    break;
+                case "top":
+                    window.tp = Number(prompt("Top_p 请输入一个0到1.0的一位小数,默认为1.0"));
+                    addMessage("AI", "设置成功");
+                    break;
+                case "fp":
+                    window.fp = Number(prompt("Frequency_penalty 请输入一个-2.0到2.0的一位小数,默认为0"));
+                    addMessage("AI", "设置成功");
+                    break;
+                case "pp":
+                    window.pp = Number(prompt("Presence_penalty 请输入一个-2.0到2.0的一位小数,默认为0"));
+                    addMessage("AI", "设置成功");
+                    break;
+                case "mode":
+                    window.mode = prompt("mode 输入“true”开启持续对话模式,输入“false”关闭该模式,默认为“true”");
+                    addMessage("AI", "设置成功");
+                    break;
+                case "csize":
+                    window.csize = prompt("csize 输入一个0到1000的整数,默认为1000");
+                    addMessage("AI", "设置成功");
+                    break;
+                case "apiurl":
+                    window.apiurl = prompt("API URL 请输入API的基础URL,默认为 https://api.openai.com/v1");
+                    addMessage("AI", "API URL 设置成功");
+                    break;
+                default:
+                    addMessage("AI", "未知指令");
+            }
+        }
+
+        // 创建帮助列表的函数
+        function createHelpList() {
+            return `
+            <div class="lists">
+                <ul class="nes-list is-circle">
+                    <li>/apikey (设置API的KEY)</li>
+                    <li>/prompt (为每次发送的文本添加前置上下文)</li>
+                    <li>/maxtoken (用于控制ChatGPT每次能生成的词数)</li>
+                    <li>/tpr (可以用来控制chatbot生成的话的多样性)</li>
+                    <li>/top (可以用来控制chatbot生成的话的质量)</li>
+                    <li>/fp (可以用来控制chatbot生成的话的"新颖程度")</li>
+                    <li>/pp (用于控制bot产生的句子的长度)</li>
+                    <li>/info (用于显示当前各项参数的值)</li>
+                    <li>/mode (用于设置是否启用持续对话模式)</li>
+                    <li>/csize (用于设置每次发送给API接口的字符数)</li>
+                    <li>/save (用于将设置的参数保存到浏览器的Cookie,有效期30天)</li>
+                    <li>/apiurl (设置API的基础URL)</li>
+                </ul>
+            </div>
+            `;
+        }
+
+        // 创建信息列表的函数
+        function createInfoList() {
+            return `
+            <div class="lists">
+                <ul class="nes-list is-circle">
+                    <li>API Key: ${window.apikey}</li>
+                    <li>API URL: ${window.apiurl}</li>
+                    <li>Prompt: ${window.prompt1}</li>
+                    <li>Max_tokens: ${window.mt}</li>
+                    <li>Temperature: ${window.tpr}</li>
+                    <li>Top_p: ${window.tp}</li>
+                    <li>Frequency_penalty: ${window.fp}</li>
+                    <li>Presence_penalty: ${window.pp}</li>
+                    <li>Mode: ${window.mode}</li>
+                    <li>Context Size: ${window.csize}</li>
+                </ul>
+            </div>
+            `;
+        }
+
+        // 修改 addMessage 函数
+        function addMessage(sender, text) {
+            const messageSection = document.createElement('section');
+            messageSection.className = `message -${sender === 'Human' ? 'right' : 'left'}`;
+
+            const balloon = document.createElement('div');
+            balloon.className = `nes-balloon from-${sender === 'Human' ? 'right' : 'left'}`;
+
+            // 处理代码块
+            const processedText = processCodeBlocks(text);
+            balloon.innerHTML = processedText;
+
+            messageSection.appendChild(balloon);
+
+            if (sender === 'AI') {
+                const icon = document.createElement('i');
+                icon.className = 'snes-jp-logo';
+                messageSection.insertBefore(icon, balloon);
+            } else {
+                const icon = document.createElement('i');
+                icon.className = 'nes-bcrikko';
+                messageSection.appendChild(icon);
+            }
+
+            messageList.appendChild(messageSection);
+            scrollToBottom();
+        }
+
+        // 修改 updateLastAIMessage 函数
+        function updateLastAIMessage(text) {
+            const messages = messageList.getElementsByClassName('message -left');
+            if (messages.length > 0) {
+                const lastAIMessage = messages[messages.length - 1];
+                const balloon = lastAIMessage.querySelector('.nes-balloon');
+                if (balloon) {
+                    // 处理代码块
+                    const processedText = processCodeBlocks(text);
+                    balloon.innerHTML = processedText;
+                    scrollToBottom();
+                }
+            }
+        }
+
+        // 添加处理代码块的函数
+        function processCodeBlocks(text) {
+            // 使用正则表达式匹配代码块
+            const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+            return text.replace(codeBlockRegex, (match, language, code) => {
+                language = language || '';
+                return `<pre><code class="${language}">${escapeHtml(code.trim())}</code></pre>`;
+            });
+        }
+
+        // 添加HTML转义函数
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // 滚动到底部
+        function scrollToBottom() {
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Cookie 相关函数
+        function setCookie(name, value) {
+            let days = 30;
+            var expires = '';
+            if (days) {
+                var date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = '; expires=' + date.toUTCString();
+            }
+            document.cookie = name + '=' + (value || '') + expires + '; path=/';
+        }
+
+        function getCookie(name) {
+            var nameEQ = name + "=";
+            var ca = document.cookie.split(';');
+            for (var i = 0; i < ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+    </script>
+</body>
+
+</html>
