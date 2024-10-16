@@ -119,11 +119,9 @@ PixelChat/
 - [free_chatgpt_api](https://github.com/popjane/free_chatgpt_api) - 提供免费 GPT-3.5 API
 - [NES.css](https://github.com/nostalgic-css/NES.css) - 像素风格 CSS 框架
 - [fusion-pixel-font](https://github.com/TakWolf/fusion-pixel-font) - 像素风格字体
-- [Pixel-Portfolio-Webite](https://github.com/bearlike/Pixel-Portfolio-Webite) - 背景和编辑光标的参考
-- [HTML-ChatGPT-3.js](https://github.com/sdsds222/HTML-ChatGPT-3.js/) - 数据传输逻辑的参考
 
 ---
 
-如有问题或建议,请[开启一个 issue](https://github.com/PixelPenguin01/PixelChat/issues) 或联系 czx920718@gmail.com。
+如有问题或建议,请[开启一个 issue](https://github.com/PixelPenguin01/PixelChat/issues)
 
 享受 PixelChat 带来的复古聊天体验吧! 🎮✨
